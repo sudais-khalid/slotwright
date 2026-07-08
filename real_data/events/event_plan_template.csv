@@ -1,0 +1,5 @@
+name,category,expected_audience,priority,target_semesters,preferred_week,duration_hours,organizer
+AI Career Fair 2026,career_fair,250,3,all,5,4,AI Department
+Intro to RL Workshop,workshop,40,2,5;6,3,2,AI Innovation Society
+Guest Lecture: LLMs in Industry,guest_lecture,120,2,all,7,1,AI Department
+Society Weekly Meetup,society_meeting,25,1,1;2;3;4,2,AI Innovation Society

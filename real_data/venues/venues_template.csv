@@ -1,0 +1,4 @@
+venue_id,name,capacity,building,equipment
+AUD-1,Main Auditorium,400,Academic Block,projector;audio;stage
+SEM-A,Seminar Room A,60,Academic Block,projector
+LAB-3,Computer Lab 3,45,AI Department,pcs;projector
