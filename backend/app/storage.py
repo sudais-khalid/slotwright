@@ -54,11 +54,15 @@ class MongoStore:
             self.db[name].insert_many([dict(d) for d in docs])
 
 
+DEFAULT_MONGO_URL = "mongodb://localhost:27017"
+
+
 def get_store():
-    url = os.environ.get("MONGO_URL")
-    if url:
-        try:
-            return MongoStore(url)
-        except Exception as exc:  # unreachable Mongo -> JSON fallback
-            print(f"[storage] MongoDB unavailable ({exc}); falling back to JSON store")
-    return JsonStore()
+    url = os.environ.get("MONGO_URL", DEFAULT_MONGO_URL)
+    try:
+        store = MongoStore(url)
+        print(f"[storage] using MongoDB at {url}")
+        return store
+    except Exception as exc:  # unreachable Mongo -> JSON fallback
+        print(f"[storage] MongoDB unavailable ({exc}); falling back to JSON store")
+        return JsonStore()
