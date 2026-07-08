@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+pymongo
+gymnasium
+numpy
+pydantic
+pytest
