@@ -16,12 +16,22 @@ async function post(path, body) {
   return res.json();
 }
 
+async function upload(path, file) {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch(BASE + path, { method: "POST", body });
+  if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+  return res.json();
+}
+
 export const api = {
   meta: () => get("/meta"),
   schedule: (method) => get(`/schedule?method=${method}`),
   train: (episodes) => post("/train", { episodes }),
   trainStatus: () => get("/train/status"),
   evaluate: (episodes) => get(`/evaluate?episodes=${episodes}`),
+  useRealData: () => post("/data/use-real", {}),
+  uploadFile: (kind, file) => upload(`/upload/${kind}`, file),
 };
 
 export function openTrainingSocket(onMessage, onClose) {

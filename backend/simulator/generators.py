@@ -7,8 +7,8 @@ what makes the group free-slot intersection meaningful rather than trivial.
 import random
 
 from .config import (
-    CATEGORIES, CATEGORY_LIST, DEPARTMENTS, EXAM_WEEKS, N_DAYS, N_SLOTS,
-    N_WEEKS, SEMESTERS, VENUES,
+    CATEGORIES, CATEGORY_LIST, DAYS, DEPARTMENTS, EXAM_WEEKS, N_DAYS, N_SLOTS,
+    N_WEEKS, SEMESTERS, SLOT_LABELS, VENUES,
 )
 
 
@@ -52,6 +52,7 @@ def generate_events(rng: random.Random, n_events: int = 40) -> list[dict]:
             "category": category,
             "expected_audience": rng.randint(lo, hi),
             "duration": 1,
+            "duration_slots": 1,
             "priority": rng.randint(1, 3),
             "department": rng.choice(DEPARTMENTS),
             "semester": rng.choice(SEMESTERS),
@@ -90,4 +91,10 @@ def generate_dataset(seed: int = 42, n_students: int = 480, n_events: int = 40) 
         "venues": generate_venues(rng),
         "calendar": generate_calendar(),
         "seed": seed,
+        "source": "synthetic",
+        "days": DAYS,
+        "slots": SLOT_LABELS,
+        "weeks": N_WEEKS,
+        "departments": DEPARTMENTS,
+        "semesters": SEMESTERS,
     }

@@ -2,14 +2,24 @@
 
 Training runs in a daemon thread; TrainingState is the single source of truth
 the REST status endpoint and the WebSocket both read from.
+
+Dataset shape metadata (days/slots/weeks/departments/semesters/source) rides
+alongside the five FR-defined collections in a "meta" document, since the
+Gymnasium env needs it but it isn't itself one of the doc's NoSQL collections.
 """
 import threading
+from pathlib import Path
 
 from rl.env import EventSchedulingEnv
 from rl.q_learning import MODELS_DIR, QLearningAgent
 from simulator.generators import generate_dataset
+from simulator.import_real import import_real_dataset
 
 from .storage import get_store
+
+REAL_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "real_data"
+DATASET_KEYS = ("students", "events", "venues", "calendar")
+META_KEYS = ("days", "slots", "weeks", "departments", "semesters", "source", "seed")
 
 
 class TrainingState:
@@ -36,36 +46,67 @@ class TrainingState:
             }
 
 
+def _has_real_files() -> bool:
+    if not REAL_DATA_DIR.exists():
+        return False
+    return all(any((REAL_DATA_DIR / d).glob("*.pdf")) for d in ("timetables", "venues", "events"))
+
+
 class AppState:
     def __init__(self):
         self.store = get_store()
         self.training = TrainingState()
         self.agent: QLearningAgent | None = None
         self.dataset: dict | None = None
+        self.import_error: str | None = None
         self._load_or_generate()
+
+    # ---------- persistence ----------
+    def _persist_dataset(self):
+        for name in DATASET_KEYS:
+            self.store.replace_all(name, self.dataset[name])
+        self.store.replace_all("meta", [{k: self.dataset[k] for k in META_KEYS}])
+        self.store.replace_all("schedule_log", [])
 
     def _load_or_generate(self):
         students = self.store.load_all("students")
-        if students:
-            self.dataset = {
-                "students": students,
-                "events": self.store.load_all("events"),
-                "venues": self.store.load_all("venues"),
-                "calendar": self.store.load_all("calendar"),
-            }
+        meta_docs = self.store.load_all("meta")
+        if students and meta_docs:
+            self.dataset = {k: self.store.load_all(k) for k in DATASET_KEYS}
+            self.dataset.update({k: meta_docs[0][k] for k in META_KEYS})
+        elif _has_real_files():
+            self.load_real_data()
         else:
             self.regenerate(seed=42)
         qpath = MODELS_DIR / "q_table.pkl"
         if qpath.exists():
             self.agent = QLearningAgent.load(qpath)
 
+    # ---------- dataset switching ----------
     def regenerate(self, seed: int = 42, n_students: int = 480, n_events: int = 40) -> dict:
         self.dataset = generate_dataset(seed=seed, n_students=n_students, n_events=n_events)
-        for name in ("students", "events", "venues", "calendar"):
-            self.store.replace_all(name, self.dataset[name])
-        self.store.replace_all("schedule_log", [])
+        self._persist_dataset()
         self.agent = None  # stale policy no longer matches the data
-        return {name: len(self.dataset[name]) for name in ("students", "events", "venues", "calendar")}
+        return self._counts()
+
+    def load_real_data(self) -> dict:
+        self.dataset = import_real_dataset(REAL_DATA_DIR)
+        self._persist_dataset()
+        self.agent = None
+        self.import_error = None
+        return self._counts()
+
+    def _counts(self) -> dict:
+        return {name: len(self.dataset[name]) for name in DATASET_KEYS}
+
+    def save_uploaded_file(self, kind: str, filename: str, content: bytes) -> Path:
+        if kind not in ("timetables", "venues", "events"):
+            raise ValueError(f"Unknown upload kind '{kind}'")
+        target_dir = REAL_DATA_DIR / kind
+        target_dir.mkdir(parents=True, exist_ok=True)
+        path = target_dir / filename
+        path.write_bytes(content)
+        return path
 
     def start_training(self, episodes: int, alpha: float, gamma: float) -> bool:
         ts = self.training

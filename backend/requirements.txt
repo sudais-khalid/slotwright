@@ -5,3 +5,5 @@ gymnasium
 numpy
 pydantic
 pytest
+pdfplumber
+python-multipart

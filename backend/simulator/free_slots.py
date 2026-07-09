@@ -10,16 +10,21 @@ import numpy as np
 from .config import N_DAYS, N_SLOTS
 
 
-def group_free_ratio(students: list[dict], department: str, semester: int) -> np.ndarray:
-    """(N_DAYS, N_SLOTS) array of free ratios in [0, 1] for the group."""
+def group_free_ratio(students: list[dict], department: str, semester: int,
+                      n_days: int = N_DAYS, n_slots: int = N_SLOTS) -> np.ndarray:
+    """(n_days, n_slots) array of free ratios in [0, 1] for the group.
+
+    n_days/n_slots default to the synthetic grid but must be passed explicitly
+    for any dataset with a different grid shape (e.g. real timetables use 9
+    real class periods instead of the synthetic 6)."""
     group = [s for s in students if s["department"] == department and s["semester"] == semester]
-    grid = np.zeros((N_DAYS, N_SLOTS))
+    grid = np.zeros((n_days, n_slots))
     if not group:
         return grid
     for s in group:
         busy = {(d, sl) for d, sl in s["weekly_timetable"]}
-        for d in range(N_DAYS):
-            for sl in range(N_SLOTS):
+        for d in range(n_days):
+            for sl in range(n_slots):
                 if (d, sl) not in busy:
                     grid[d, sl] += 1
     return grid / len(group)

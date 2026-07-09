@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "./api.js";
+import DataView from "./views/DataView.jsx";
 import EvaluationView from "./views/EvaluationView.jsx";
 import ScheduleView from "./views/ScheduleView.jsx";
 import TrainingView from "./views/TrainingView.jsx";
@@ -8,6 +9,7 @@ const TABS = [
   { id: "schedule", label: "Schedule" },
   { id: "training", label: "Training" },
   { id: "evaluation", label: "Evaluation" },
+  { id: "data", label: "Data" },
 ];
 
 const initialTab = () => {
@@ -37,6 +39,7 @@ export default function App() {
           <span className="status-chip">
             <span className={"dot" + (meta.agent_trained ? "" : " off")} />
             {meta.agent_trained ? "agent trained" : "agent not trained"}
+            &nbsp;·&nbsp;{meta.source === "real_fall2025" ? "AI Dept · Fall 2025" : "synthetic data"}
             &nbsp;·&nbsp;{meta.n_students} students · {meta.n_events} events
           </span>
         )}
@@ -55,6 +58,7 @@ export default function App() {
         {meta && tab === "schedule" && <ScheduleView meta={meta} />}
         {meta && tab === "training" && <TrainingView onTrained={refreshMeta} />}
         {meta && tab === "evaluation" && <EvaluationView agentTrained={meta.agent_trained} />}
+        {meta && tab === "data" && <DataView meta={meta} onChanged={refreshMeta} />}
       </main>
     </>
   );
