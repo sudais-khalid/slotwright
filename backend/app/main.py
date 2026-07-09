@@ -3,6 +3,7 @@
 Run from backend/:  uvicorn app.main:app --reload --port 8000
 """
 import asyncio
+import os
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,11 +17,19 @@ from simulator.config import CATEGORY_LIST
 from .state import state
 
 app = FastAPI(title="AI Event Scheduler", version="1.0")
+
+_default_origins = "http://localhost:5173,http://127.0.0.1:5173"
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=os.environ.get("CORS_ORIGINS", _default_origins).split(","),
     allow_methods=["*"], allow_headers=["*"],
 )
+
+
+@app.get("/health")
+def health():
+    """Liveness probe for the container HEALTHCHECK / orchestrator readiness checks."""
+    return {"status": "ok"}
 
 
 class SimulateRequest(BaseModel):

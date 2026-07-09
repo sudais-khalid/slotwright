@@ -1,0 +1,65 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    networks: [scheduler]
+    # not exposed to the host — reachable only from other services on this network
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      MONGO_URL: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "8000:8000"   # direct API/Swagger access (http://localhost:8000/docs); the frontend also proxies /api and /ws here
+    volumes:
+      - backend_data:/app/data      # JSON-store fallback if Mongo is ever unreachable
+      - backend_models:/app/models  # trained Q-table, persists across restarts
+      - ./real_data:/real_data      # department timetables/venues/event-plan uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks: [scheduler]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 1G
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks: [scheduler]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+
+networks:
+  scheduler:
+
+volumes:
+  mongo_data:
+  backend_data:
+  backend_models:
