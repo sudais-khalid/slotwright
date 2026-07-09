@@ -6,6 +6,8 @@ against random and rule-based baselines, with a web dashboard.
 
 Muhammad Sudais Khalid · BSAI-23F-0050
 
+![Dashboard — Schedule tab showing the RL agent's weekly datesheet for the real Department of AI Fall 2025 calendar](docs/screenshot.png)
+
 ## Architecture
 
 - **backend/** — Python: Gymnasium environment, tabular Q-Learning agent,
