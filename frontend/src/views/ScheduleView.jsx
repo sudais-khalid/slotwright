@@ -64,7 +64,7 @@ export default function ScheduleView({ meta }) {
       </div>
 
       {error && <p className="error-note">{error}</p>}
-      {!data && !error && <p className="note">Building the {METHOD_LABELS[method].toLowerCase()} schedule…</p>}
+      {!data && !error && <p className="note pulse-text">Building the {METHOD_LABELS[method].toLowerCase()} schedule…</p>}
 
       {data && (
         <div className="sched-layout">
