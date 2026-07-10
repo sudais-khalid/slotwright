@@ -73,6 +73,11 @@ jobs:
         with:
           context: ./${{ matrix.service }}
           push: true
+          # GHCR has repeatedly rejected the default provenance/SBOM attestation
+          # manifests with an unsupported-media-type error even when the image
+          # push itself is fully authorized; disabling them is the documented fix.
+          provenance: false
+          sbom: false
           tags: |
             ghcr.io/${{ github.repository }}-${{ matrix.service }}:latest
             ghcr.io/${{ github.repository }}-${{ matrix.service }}:${{ github.sha }}
